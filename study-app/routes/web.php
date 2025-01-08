@@ -2,8 +2,46 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
+Route::post('/credentials/register', function () {
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
 
+    // Validação básica (opcional)
+    if (!isset($data['name']) || !isset($data['email']) || !isset($data['password'])) {
+        return response()->json(['error' => 'Invalid input'], 400);
+    }
+
+    // Cria um novo usuário e salva no banco de dados
+    $user = new User();
+    $user->name = $data['name'];
+    $user->email = $data['email'];
+    $user->password = bcrypt($data['password']); // Use bcrypt para criptografar a senha
+    $user->save();
+
+    return response()->json(['message' => 'User registered successfully']);
+});
+
+Route::post('/credentials/login', function () {
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
+
+    // Validação básica
+    if (!isset($data['email']) || !isset($data['password'])) {
+        return response()->json(['error' => 'Invalid input'], 400);
+    }
+
+    // Verifica as credenciais do usuário
+    if (Auth::attempt(['email' => $data['email'], 'password' => $data['password']])) {
+        // Gera o token CSRF
+        $csrfToken = csrf_token();
+        return response()->json(['message' => 'Login successful', 'csrf_token' => $csrfToken]);
+    } else {
+        return response()->json(['error' => 'Invalid credentials'], 401);
+    }
+});
 
 Route::post('/api/pokemon', function () {
     // Recebe a solicitação POST do front (assumimos que este é um front selado, sem possibilidade de injeção de código)
