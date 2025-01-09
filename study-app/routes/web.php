@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
+Route::get('/login', function () {
+    return 'Login Page';
+})->name('login');
+
 Route::post('/credentials/register', function () {
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
@@ -75,4 +79,40 @@ Route::post('/api/pokemon', function () {
     ];
     Log::info('Dados retornados: ' . json_encode($data));
     return response()->json($data);
+});
+
+Route::middleware('auth')->post('/api/pokemon/add_to_collection', function () {
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
+
+    if (!isset($data['name'])) {
+        return response()->json(['error' => 'Invalid input'], 400);
+    }
+
+    $user = Auth::user();
+
+    $pokemons = $user->pokemons;
+    if (isset($pokemons[$data['name']])) {
+        $pokemons[$data['name']] = true;
+    } else {
+        return response()->json(['error' => 'Pokemon not found'], 404);
+    }
+
+    $user->pokemons = $pokemons;
+    $user->save();
+
+    return response()->json(['message' => 'Collection updated successfully']);
+    
+});
+
+Route::middleware('auth')->get('/api/pokemon/check', function () {
+    $user = Auth::user();
+    $data = $user->pokemons;
+
+    // Extrai as chaves onde os valores são false
+    $falseKeys = array_keys(array_filter($data, function ($value) {
+        return $value === false;
+    }));
+
+    return response()->json(['false_keys' => $falseKeys]);
 });
