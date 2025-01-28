@@ -1,5 +1,15 @@
+# Setup
+
+php artisan migrate
+php artisan serve
+
+bater na rota /populate_db - demora mesmo < vai popular toda a db com todos os pokemons
+cadastrar e utilizar
+
 # php-backend-study
  estudo laravel
+
+
 
 
 # Json para postman
